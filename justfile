@@ -17,7 +17,8 @@ fix:
 build:
     uv build
 
-# The integration tests, in payfurl/platform, against this checkout and an API built from source (Docker); args go to pytest
+# The integration tests: payfurl/platform's API tests (api.tests) on this checkout, against the API on this machine
+# (the platform's `just dev`); args go to pytest
 e2e *args:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -25,9 +26,9 @@ e2e *args:
     platform=${PLATFORM_DIR:-}
     if [ -z "$platform" ]; then
         for candidate in ../platform ../../platform; do
-            if [ -f "$candidate/e2e/api-tests/pythonsdk/docker-compose.yml" ]; then platform=$candidate; break; fi
+            if [ -f "$candidate/e2e/api-tests/api.tests/conftest.py" ]; then platform=$candidate; break; fi
         done
     fi
-    [ -n "$platform" ] && [ -f "$platform/e2e/api-tests/pythonsdk/docker-compose.yml" ] \
+    [ -n "$platform" ] && [ -f "$platform/e2e/api-tests/api.tests/conftest.py" ] \
         || { echo "no payfurl/platform checkout at ../platform or ../../platform: set PLATFORM_DIR" >&2; exit 1; }
-    cd "$platform" && PYTHONSDK_DIR="$sdk" just e2e pythonsdk {{args}}
+    cd "$platform" && PYTHONSDK_DIR="$sdk" just e2e api {{args}}

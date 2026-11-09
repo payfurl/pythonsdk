@@ -31,8 +31,9 @@ A new endpoint is a method in `resources.py`, its models in `models.py` (request
 
 ## Integration tests
 
-payFURL runs the SDK against the API, built from source, before each release. Maintainers with a checkout of the
-platform beside this one run `just e2e`.
+payFURL's own API tests are the SDK's integration tests: they call the API through the SDK. Before each release,
+maintainers run them on this checkout against the API built from source (`just e2e`, with the platform checked out
+beside this repo and its stack running).
 
 ## Releasing
 

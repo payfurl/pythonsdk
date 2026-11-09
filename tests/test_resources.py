@@ -305,12 +305,27 @@ CASES = {
     # Payment links
     "payment_links.create": Case(
         lambda c: c.payment_links.create(
-            body(m.CreatePaymentLink, {"title": "Shoes", "amount": 30, "currency": "AUD", "callToAction": "Pay"})
+            body(
+                m.CreatePaymentLink,
+                {
+                    "title": "Shoes",
+                    "amount": 30,
+                    "currency": "AUD",
+                    "callToAction": "Pay",
+                    "allowedPaymentTypes": ["card"],
+                },
+            )
         ),
         "POST",
         "/payment_link",
         m.PaymentLink,
-        body={"title": "Shoes", "amount": 30.0, "currency": "AUD", "callToAction": "Pay"},
+        body={
+            "title": "Shoes",
+            "amount": 30.0,
+            "currency": "AUD",
+            "callToAction": "Pay",
+            "allowedPaymentTypes": ["card"],
+        },
     ),
     "payment_links.get": Case(lambda c: c.payment_links.get("pl1"), "GET", "/payment_link/pl1", m.PaymentLink),
     "payment_links.search": Case(
@@ -494,23 +509,14 @@ CASES = {
         lambda c: c.transfers.create(
             body(
                 m.NewTransferGroup,
-                {
-                    "providerId": "p1",
-                    "groupReference": "g1",
-                    "chargeId": "ch1",
-                    "transfers": [{"account": "a1", "amount": 1.25}],
-                },
+                {"providerId": "p1", "chargeId": "ch1", "transfers": [{"account": "a1", "amount": 1.25}]},
             )
         ),
         "POST",
         "/transfer",
         list[m.TransferData],
-        body={
-            "providerId": "p1",
-            "groupReference": "g1",
-            "chargeId": "ch1",
-            "transfers": [{"account": "a1", "amount": 1.25}],
-        },
+        # No groupReference: the API doesn't require one.
+        body={"providerId": "p1", "chargeId": "ch1", "transfers": [{"account": "a1", "amount": 1.25}]},
         response=[{"transferId": "tr1"}],
     ),
     "transfers.get": Case(lambda c: c.transfers.get("tr1"), "GET", "/transfer/tr1", m.TransferData),

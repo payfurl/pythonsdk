@@ -433,7 +433,8 @@ class CreatePaymentLink(_Request):
     title: str
     amount: Amount | None = None
     currency: str | None = None
-    allowed_payment_types: list[PaymentType] | None = None
+    #: The payment methods the link's checkout offers, as the browser SDK names them: card, paypal, googlepay, ...
+    allowed_payment_types: list[str] | None = None
     description: str | None = None
     image: str | None = None
     confirmation_message: str | None = None
@@ -1014,8 +1015,8 @@ class NewTransfer(_Request):
 
 class NewTransferGroup(_Request):
     provider_id: str
-    group_reference: str
     transfers: list[NewTransfer]
+    group_reference: str | None = None
     charge_id: str | None = None
 
 
@@ -1056,7 +1057,7 @@ class PaymentLink(_Response):
     title: str | None = None
     amount: Amount | None = None
     currency: str | None = None
-    allowed_payment_types: list[OpenEnum[PaymentType]] | None = None
+    allowed_payment_types: list[str] | None = None
     description: str | None = None
     image: str | None = None
     confirmation_message: str | None = None
