@@ -1,0 +1,86 @@
+# Push a tag vX.Y.Z on main to release: CI runs, the sdist and wheel are built, published to PyPI with Trusted
+# Publishing (GitHub OIDC, no stored token; PyPI's publisher names this file and the `pypi` environment), and the
+# GitHub release gets that version's CHANGELOG.md section and the files.
+name: Release
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: The tag is on main
+        run: |
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::$GITHUB_REF_NAME is not on main"
+            exit 1
+          fi
+
+      - name: The tag is the package's version
+        run: |
+          version=$(sed -nE 's/^version = "(.*)"$/\1/p' pyproject.toml)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::$GITHUB_REF_NAME is not v + pyproject.toml's version ($version)"
+            exit 1
+          fi
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          awk -v heading="## [$version]" 'index($0, heading) == 1 {found = 1; next} /^## \[/ {found = 0} found' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "::error::CHANGELOG.md has no '## [$version]' section"
+            exit 1
+          fi
+
+      - uses: astral-sh/setup-uv@v7
+
+      - run: uv build
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: release
+          path: |
+            dist/
+            notes.md
+
+  pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write # Trusted Publishing, and the attestations
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: release
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  github:
+    needs: pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # the GitHub release
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: release
+
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --title "$GITHUB_REF_NAME" --notes-file notes.md dist/*
