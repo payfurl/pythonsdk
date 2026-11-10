@@ -64,7 +64,7 @@ jobs:
     permissions:
       id-token: write # Trusted Publishing, and the attestations
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: release
 
@@ -76,7 +76,7 @@ jobs:
     permissions:
       contents: write # the GitHub release
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: release
 
